@@ -2,7 +2,7 @@ import sys, os
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path: sys.path.append(project_root)
 from utils.utils import time_function 
-import itertools
+import itertools, math
 def parse_input(file_path):
     with open(file_path, "r") as file:
         
@@ -53,22 +53,42 @@ def solution2():
 def solution2_fast():
     """
     Incredibly fast, wouldnt have been possible without gemini.
+    This is ridicioulus. How do people think this way!?
     """
-    def _generatechunks(start, end, length,repeat):
-        numbers = range(10**(length - 1), 10**length) 
-        return  [int(str(n)*repeat) for n in numbers if start <= int(str(n)*repeat)  and int(str(n)*repeat) <= end]
     input = parse_input('input.txt')
     invalid_sum = 0
 
-    for i,j in input:
-        max_len = len(str(j))
+    for start_val, end_val in input:
+        max_len = len(str(end_val))
         solutions = set()
         for block_len in range(1,(max_len//2)+1):
             for repeat in itertools.count(start=2):
                 total_len = block_len * repeat
                 if total_len > max_len:
                     break
-                solutions.update(_generatechunks(i,j, block_len, repeat))
+
+                #  Calculate the Multiplier (The structure of the repeating number)
+                # This is faster, instead of doing str(block)*repeat
+                multiplier_str = '1'
+                for _ in range(1, repeat):
+                    multiplier_str += '0' * (block_len - 1) + '1'
+                multiplier = int(multiplier_str)
+
+                min_base = 10**(block_len - 1)
+                max_base = 10**block_len- 1
+
+                start_p = max(min_base,  math.ceil(start_val / multiplier))
+                end_p = min(max_base, math.floor(end_val / multiplier))
+                # Generate and store the invalid IDs
+                # This loop now iterates only over the handful of test values 
+                # that *might* produce a match.
+                if start_p <= end_p:
+                    for block in range(start_p, end_p + 1):
+                        ID_int = block * multiplier
+                        # Since the start_p and end_p bounds are highly accurate,
+                        # the final check is mostly just confirming the bounds were tight.
+                        if ID_int >= start_val and ID_int <= end_val:
+                            solutions.add(ID_int)
         invalid_sum += sum(solutions)
     print(f"solution 2: {invalid_sum}")
 
