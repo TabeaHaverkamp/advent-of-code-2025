@@ -2,7 +2,7 @@ import sys, os
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path: sys.path.append(project_root)
 from utils.utils import time_function 
-
+import itertools
 def parse_input(file_path):
     with open(file_path, "r") as file:
         
@@ -48,5 +48,31 @@ def solution2():
     print(f"solution 2: {invalid_sum}")
 
 
+
+@time_function
+def solution2_fast():
+    """
+    Incredibly fast, wouldnt have been possible without gemini.
+    """
+    def _generatechunks(start, end, length,repeat):
+        numbers = range(10**(length - 1), 10**length) 
+        return  [int(str(n)*repeat) for n in numbers if start <= int(str(n)*repeat)  and int(str(n)*repeat) <= end]
+    input = parse_input('input.txt')
+    invalid_sum = 0
+
+    for i,j in input:
+        max_len = len(str(j))
+        solutions = set()
+        for block_len in range(1,(max_len//2)+1):
+            for repeat in itertools.count(start=2):
+                total_len = block_len * repeat
+                if total_len > max_len:
+                    break
+                solutions.update(_generatechunks(i,j, block_len, repeat))
+        invalid_sum += sum(solutions)
+    print(f"solution 2: {invalid_sum}")
+
+
 solution1()             
 solution2()
+solution2_fast()
