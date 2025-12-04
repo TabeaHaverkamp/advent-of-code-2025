@@ -21,10 +21,10 @@ directions = {"L": (0, -1), "R": (0,1), "U": (-1,0), "D": (1,0),
 paper = "@"
 empty = "."
 
-def check_neighbours(r,c, papers):
+def check_neighbours(r,c, paper_set):
     papers_in_neighbourhood = 0
     for d in directions.values():
-        if (r+d[0],c+d[1]) in papers:
+        if (r+d[0],c+d[1]) in paper_set:
             papers_in_neighbourhood +=1
     return papers_in_neighbourhood
 
@@ -40,7 +40,7 @@ def solution1():
                 papers.add((r_idx, c_idx))
     
     for r, c in papers:
-        if check_neighbours(r, c, papers=papers) < 4:
+        if check_neighbours(r, c, paper_set=papers) < 4:
             access += 1
     print(f"solution 1: {access}")
 
@@ -58,16 +58,15 @@ def solution2():
                     paper_list.add((r_idx, c_idx))
 
     while True:
-        remaining_paper_list = set()
-        i = 0
+        papers_to_remove = []
         for (r_idx, c_idx) in paper_list:
             if check_neighbours(r_idx, c_idx, paper_list) < 4:
                 access += 1
-                i+=1
-            else: remaining_paper_list.add((r_idx, c_idx))
-      
-        paper_list = remaining_paper_list
-        if i ==0: break 
+                papers_to_remove.append ((r_idx,c_idx))
+        if not papers_to_remove:
+            break
+        for coord in papers_to_remove:
+            paper_list.remove(coord)
             
     print(f"solution 2: {access}")
         
