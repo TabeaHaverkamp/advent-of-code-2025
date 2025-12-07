@@ -10,15 +10,16 @@ def transpose(m):
      return [[m[j][i] for j in range(len(m))] for i in range(len(m[0]))]
 def parse_input(file_path):
     with open(file_path, "r") as file:     
-        data = [line.strip() for line in file]
+        data = [line.replace("\n", "") for line in file]
+        agg_idx = [i for i, ltr in enumerate(data[-1]) if ltr != ' ']
         agg = data[-1].split()
-        data = transpose([[int(i.strip()) for i in line.split() ]for line  in data[:-1]])
-    return data, agg 
+    return data[:-1], agg, agg_idx
 
 
 @time_function
 def solution1():
-    data, agg = parse_input('input.txt')
+    data, agg, _ = parse_input('input.txt')
+    data= transpose([[int(i.strip()) for i in line.split() ]for line  in data[:-1]])
     cnt = 0
     for d, a in zip(data, agg):
         if a == '*':
@@ -28,59 +29,39 @@ def solution1():
     print(f"solution1: {cnt}")
 
 
-def parse_input2(file_path):
-    with open(file_path, "r") as file:     
-        data = [line for line in file]
-        agg = data[-1].split()
-        data   = data[:-1]
-        data = [[line[i:i+len(agg)].replace("\n", "") for i in range(0, len(line), len(agg))] for line in data]
-    return data, agg 
+
 
 @time_function
 def solution2():
-    data, agg = parse_input2('testinput.txt')
-    for l in data: print(l)
-
-    print('---')
-
-    for l in transpose(data): print(l)
+    data,agg, agg_idx = parse_input('input.txt')
+    m =  [[0 for _ in range(len(agg))] for _ in range(len(data))]
+    cnt = 0
+    for r_idx, row in enumerate(data):
+        prev = 0
+        for c_idx, a_idx in enumerate(agg_idx[1:]):
+            m[r_idx][c_idx] = (row[prev:a_idx])
+            prev = a_idx
+        m[r_idx][c_idx+1] = (row[a_idx:])
     
-    print('---')
-    agg = agg[::-1]
-    for l in transpose(data):
-        cnt = 0
-        # check if the first thing is only empty
-        only_empty = True
-        for number in l:
-            number = number[::-1]
-            if number != ' ':
-                only_empty = False
-            
-        if only_empty:
-            l = [item[:-1] for item in l]
-        l = l[::-1]
-        print("line: ", l)
+
+    for col, a  in zip(transpose(m), agg):
+        #col = col[::-1]
+        number_len = len(col[0])
         numbers = []
-        # go through every line. build the numbers by adding the columns on top of each other
-        for c in range(len(l[0])):
-            current_number = 0
-            number_cnt = 0
-            for number in l:
-                number = number[::-1]
-                if number[c] != ' ':
-                    current_number += (10**number_cnt) * int(number[c])
-                    #print(".  ", number[c], current_number)
-                    number_cnt+=1
-            numbers.append(current_number)
-        print(numbers)
-        if agg[c] == '*':
-            numbers.remove(0)
+        for i in range(number_len-1, -1, -1):
+            new_number =''
+            for number in col:
+                if number[i] !=' ':
+                    new_number += number[i]
+            if len(new_number)>0:
+                numbers.append(int(new_number))
+        if a == '*':
             cnt += math.prod(numbers)
-            print('mul!', math.prod(numbers))
-        elif agg[c] == '+':
+        elif a == '+':
             cnt += sum(numbers)
-            print("sum, ", sum(numbers))
-    print(f"solution2: {cnt}")
+    print(f"solution 2: {cnt}")
+        
+    
 
-
+solution1()
 solution2()
