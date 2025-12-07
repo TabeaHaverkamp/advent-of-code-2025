@@ -33,28 +33,32 @@ def solution1():
 
 @time_function
 def solution2():
-    data,agg, agg_idx = parse_input('input.txt')
+    data,agg, agg_idx = parse_input('testinput.txt')
     m =  [[0 for _ in range(len(agg))] for _ in range(len(data))]
     cnt = 0
-    for r_idx, row in enumerate(data):
-        prev = 0
-        for c_idx, a_idx in enumerate(agg_idx[1:]):
-            m[r_idx][c_idx] = (row[prev:a_idx])
-            prev = a_idx
-        m[r_idx][c_idx+1] = (row[a_idx:])
+    m = []
+    print(agg_idx)
+    for row in data:
+        row_segments = []
+        for start, end in list(zip(agg_idx[:-1], agg_idx[1:])):
+            row_segments.append(row[start:end])
+        row_segments.append(row[agg_idx[-1]:])
+        m.append(row_segments)
     
 
     for col, a  in zip(transpose(m), agg):
-        #col = col[::-1]
         number_len = len(col[0])
         numbers = []
+
         for i in range(number_len-1, -1, -1):
-            new_number =''
-            for number in col:
-                if number[i] !=' ':
-                    new_number += number[i]
-            if len(new_number)>0:
-                numbers.append(int(new_number))
+            chars = [
+                segment[i] 
+                for segment in col 
+                if i < len(segment) and segment[i] != ' '
+            ]
+            if chars:
+                numbers.append(int("".join(chars)))
+            
         if a == '*':
             cnt += math.prod(numbers)
         elif a == '+':
