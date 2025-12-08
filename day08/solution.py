@@ -69,24 +69,16 @@ def solution1():
             all_groups.append(current_group)
     group_size = [len(group) for group in all_groups]
     group_size.sort()
-    print(all_groups)
-    print(group_size)
     print(f"Solution 1: {math.prod(group_size[-3:])}")
     
 
 
 
-
-
-
-
-
 @time_function
 def solution2():
+    coordinates = parse_input('input.txt')
 
-    input_type = 'input'
-
-    coordinates = parse_input(f'{input_type}.txt')
+    # get distances to each node
     distances = dict()
     for c in range(len(coordinates)):
         for c2 in range(len(coordinates)):
@@ -106,18 +98,15 @@ def solution2():
                     recursive_dfs(connection_dict, value, current_group,visited_set)
     
 
-    group_sizes = [0]
+    first_group_size = 0
     connections = dict()
-    cnt = 0
     last_added_coord = tuple()
-    while  group_sizes[0] < len(coordinates) and cnt < 10000:
+    while  first_group_size < len(coordinates) :
         # get all minimum connections, so we can build nets later on
-        cnt +=1
         min_dist = min(distances.values())
         result = [k for k, v in distances.items() if v == min_dist] 
 
-        for i in result:
-            (x,y)  = i
+        for (x,y)  in result:
             if x in connections.keys():
                 connections[x].add(y)
             else: connections[x] = {y}
@@ -127,7 +116,7 @@ def solution2():
             else:
                 connections[y] = {x}
 
-            distances.pop(i)
+            distances.pop((x,y))
             last_added_coord = (coordinates[x],coordinates[y])
 
         all_groups = []
@@ -137,21 +126,70 @@ def solution2():
                 current_group = []
                 recursive_dfs(connections, node, current_group, visited)
                 all_groups.append(current_group)
-        group_sizes = [len(group) for group in all_groups]
-        group_sizes.sort()
+        first_group_size = len(all_groups[0])
 
-        # need to remove nodes that are already in network. to speed it up in the end.
-
-
-        # print("all groups", all_groups)
-        # print("group sizes", group_sizes)
-        # print("connections", connections)
-        # print("last added coord", last_added_coord)
     print(f"Solution 2: {last_added_coord[0][0]* last_added_coord[1][0]}")
+
+
+
+
+@time_function
+def solution2_fast():
+    """
+    The fast approach uses DSU instead of DFS and has the minimum calculation outside of the loop.
+    """
+    coordinates = parse_input('input.txt')
+
+    # get distances to each node
+    distances = dict()
+    for c in range(len(coordinates)):
+        for c2 in range(len(coordinates)):
+            if c != c2:
+                #distances are not directed, so no need to compute all again
+                if not distances.get((c2,c)):
+                    distances[(c,c2)] = distance(coordinates[c],coordinates[c2])
+    
+    def get_root(node):
+        if parent[node] == node:
+            return node
+        parent[node] = get_root(parent[node])
+        return parent[node]
+    
+    def union(node_a, node_b):
+        root_a = get_root(node_a)
+        root_b = get_root(node_b)
+        
+        if root_a != root_b:
+            # Optimization: Merge the smaller tree into the larger tree
+            if size[root_a] < size[root_b]:
+                parent[root_a] = root_b
+                size[root_b] += size[root_a]
+            else:
+                parent[root_b] = root_a
+                size[root_a] += size[root_b]
+            return True # The sets were merged
+        return False # The sets were already connected
+    
+    parent = {i: i for i in range(len(coordinates))}
+    size = {i: 1 for i in range(len(coordinates))}
+
+    group_count = len(coordinates)
+    last_added_coord = tuple()
+    sorted_connections = sorted(distances.items(), key=lambda item: item[1]) # sort asc by distance.
+    while  group_count > 1 :
+        ((x,y),_) = sorted_connections.pop(0)
+        if union(x, y):
+            group_count -= 1 # Only decrease count if a merge (union) happened
+        last_added_coord = (coordinates[x],coordinates[y])
+
+    print(f"Solution 2, fast: {last_added_coord[0][0]* last_added_coord[1][0]}")
+
+
     
 
 
 
 
-#solution1()
+solution1()
 solution2()
+solution2_fast()
