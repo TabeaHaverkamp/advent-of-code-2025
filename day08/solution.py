@@ -15,15 +15,8 @@ def distance(point1, point2):
                     + pow(point1[1]-point2[1], 2)
                     + pow(point1[2]-point2[2], 2))
 
-@time_function
-def solution1():
-
-    input_type = 'input'
-    if input_type == 'testinput':
-        connection_cnt = 10
-    else:
-        connection_cnt = 1000
-    coordinates = parse_input(f'{input_type}.txt')
+#@time_function
+def get_distances (coordinates):
     distances = dict()
     for c in range(len(coordinates)):
         for c2 in range(len(coordinates)):
@@ -31,11 +24,50 @@ def solution1():
                 #distances are not directed, so no need to compute all again
                 if not distances.get((c2,c)):
                     distances[(c,c2)] = distance(coordinates[c],coordinates[c2])
+    return distances
 
+def recursive_dfs(connection_dict, current_key, current_group,visited_set ):
+    visited_set.add(current_key)
+    current_group.append(current_key)
+    for value in connection_dict.get(current_key, set()):
+        if value in connection_dict.keys() and value not in visited_set:
+            if value not in visited_set:
+                recursive_dfs(connection_dict, value, current_group,visited_set)
+
+def union(node_a, node_b, parent, size):
+    def get_root(node):
+        if parent[node] == node:
+            return node
+        parent[node] = get_root(parent[node])
+        return parent[node]
+    root_a = get_root(node_a)
+    root_b = get_root(node_b)
+    
+    if root_a != root_b:
+        # Optimization: Merge the smaller tree into the larger tree
+        if size[root_a] < size[root_b]:
+            parent[root_a] = root_b
+            size[root_b] += size[root_a]
+        else:
+            parent[root_b] = root_a
+            size[root_a] += size[root_b]
+        return True # The sets were merged
+    return False # The sets were already connected
+
+
+@time_function
+def solution1():
+    input_type = 'input'
+    if input_type == 'testinput':
+        connection_cnt = 10
+    else:
+        connection_cnt = 1000
+    coordinates = parse_input(f'{input_type}.txt')
+    distances = get_distances(coordinates)
 
     # get all minimum connections, so we can build nets later on
     connections = dict()
-    for i in range(connection_cnt):
+    for _ in range(connection_cnt):
         min_dist = min(distances.values())
         result = [k for k, v in distances.items() if v == min_dist] 
         for i in result:
@@ -51,15 +83,7 @@ def solution1():
 
             distances.pop(i)
 
-    
-    def recursive_dfs(connection_dict, current_key, current_group,visited_set ):
-        visited_set.add(current_key)
-        current_group.append(current_key)
-        for value in connection_dict.get(current_key, set()):
-            if value in connection_dict.keys() and value not in visited_set:
-                if value not in visited_set:
-                    recursive_dfs(connection_dict, value, current_group,visited_set)
-    
+
     all_groups = []
     visited = set()
     for node in connections.keys():
@@ -79,25 +103,8 @@ def solution2():
     coordinates = parse_input('input.txt')
 
     # get distances to each node
-    distances = dict()
-    for c in range(len(coordinates)):
-        for c2 in range(len(coordinates)):
-            if c != c2:
-                #distances are not directed, so no need to compute all again
-                if not distances.get((c2,c)):
-                    distances[(c,c2)] = distance(coordinates[c],coordinates[c2])
-
+    distances = get_distances(coordinates)
    
-
-    def recursive_dfs(connection_dict, current_key, current_group,visited_set ):
-        visited_set.add(current_key)
-        current_group.append(current_key)
-        for value in connection_dict.get(current_key, set()):
-            if value in connection_dict.keys() and value not in visited_set:
-                if value not in visited_set:
-                    recursive_dfs(connection_dict, value, current_group,visited_set)
-    
-
     first_group_size = 0
     connections = dict()
     last_added_coord = tuple()
@@ -132,6 +139,37 @@ def solution2():
 
 
 
+@time_function
+def solution1_fast():
+    """
+    The fast approach uses DSU instead of DFS.
+    """
+    input_type = 'input'
+    if input_type == 'testinput':
+        connection_cnt = 10
+    else:
+        connection_cnt = 1000
+    coordinates = parse_input(f'{input_type}.txt')
+
+    # get distances to each node
+    distances = get_distances(coordinates)
+    
+    parent = {i: i for i in range(len(coordinates))}
+    size = {i: 1 for i in range(len(coordinates))}
+
+    group_count = len(coordinates)
+    sorted_connections = sorted(distances.items(), key=lambda item: item[1]) # sort asc by distance.
+
+    for _ in range(connection_cnt):
+        ((x,y),_) = sorted_connections.pop(0)
+        if union(x, y,parent, size):
+            group_count -= 1 # Only decrease count if a merge (union) happened
+
+    sorted_size = sorted(size.items(), key=lambda item: item[1]) # sort asc by distance.
+    biggest_groups = [i[1] for i in sorted_size[-3:]]
+    print(f"Solution 1, fast: {math.prod(biggest_groups)} ")
+    
+
 
 @time_function
 def solution2_fast():
@@ -141,34 +179,7 @@ def solution2_fast():
     coordinates = parse_input('input.txt')
 
     # get distances to each node
-    distances = dict()
-    for c in range(len(coordinates)):
-        for c2 in range(len(coordinates)):
-            if c != c2:
-                #distances are not directed, so no need to compute all again
-                if not distances.get((c2,c)):
-                    distances[(c,c2)] = distance(coordinates[c],coordinates[c2])
-    
-    def get_root(node):
-        if parent[node] == node:
-            return node
-        parent[node] = get_root(parent[node])
-        return parent[node]
-    
-    def union(node_a, node_b):
-        root_a = get_root(node_a)
-        root_b = get_root(node_b)
-        
-        if root_a != root_b:
-            # Optimization: Merge the smaller tree into the larger tree
-            if size[root_a] < size[root_b]:
-                parent[root_a] = root_b
-                size[root_b] += size[root_a]
-            else:
-                parent[root_b] = root_a
-                size[root_a] += size[root_b]
-            return True # The sets were merged
-        return False # The sets were already connected
+    distances = get_distances(coordinates)
     
     parent = {i: i for i in range(len(coordinates))}
     size = {i: 1 for i in range(len(coordinates))}
@@ -176,9 +187,10 @@ def solution2_fast():
     group_count = len(coordinates)
     last_added_coord = tuple()
     sorted_connections = sorted(distances.items(), key=lambda item: item[1]) # sort asc by distance.
+
     while  group_count > 1 :
         ((x,y),_) = sorted_connections.pop(0)
-        if union(x, y):
+        if union(x, y,parent, size):
             group_count -= 1 # Only decrease count if a merge (union) happened
         last_added_coord = (coordinates[x],coordinates[y])
 
@@ -192,4 +204,5 @@ def solution2_fast():
 
 solution1()
 solution2()
+solution1_fast()
 solution2_fast()
