@@ -4,7 +4,10 @@ if project_root not in sys.path: sys.path.append(project_root)
 from utils.utils import time_function 
 
 
-import itertools, math, collections
+import itertools
+
+import collections
+from collections import deque
 
 @time_function
 def parse_input(file_path):
@@ -23,11 +26,7 @@ def press_buttons_indicator(indicator, buttons):
         indicator[b] = not indicator[b]
     return indicator
 
-def press_buttons_joltage(joltage, buttons):
-    for b in buttons:
-        joltage[b] =  joltage[b]+1
-    return joltage
-    
+
 
 @time_function
 def solution1():
@@ -53,44 +52,45 @@ def solution1():
         
 
 
-import collections
 @time_function
 def solution2():
-    i,all_buttons,j = parse_input('testinput.txt')
+    def press_buttons_joltage(joltage, buttons):
+        joltage = list(joltage)
+        for b in buttons:
+            joltage[b] =  joltage[b]-1
+        return tuple(joltage)
+    
+    def bfs(joltage, buttons):
+        q =  deque()
+        visited_joltages = set()
+        q.append((joltage, []))
+        print('start: ', joltage)
+        while len(q) > 0:
+            (current_joltages, buttons_pressed) = q.popleft()
+            for b in buttons:
+                new_joltages = press_buttons_joltage(current_joltages, b)
+                #print('. ', current_joltages,  new_joltages)
+                if all(j == 0 for j in new_joltages): 
+                    print("found it!", len(buttons_pressed) + 1)
+                    return len(buttons_pressed) +1
+                if tuple(new_joltages) not in visited_joltages and min(new_joltages)>=0:
+                    new_buttons_pressed = buttons_pressed + [b]
+                    visited_joltages.add(tuple(new_joltages))
+                    q.append((new_joltages, new_buttons_pressed))
+        return -1
+
+       
+       
+
+    _,all_buttons,all_joltages = parse_input('input.txt')
     button_presses = 0
-    for _, buttons, joltages in zip(i,all_buttons,j):
+    for buttons, joltages in zip(all_buttons,all_joltages):
         buttons = buttons[0]
-        joltages_dict = {idx:i for idx, i in enumerate(joltages)}
-        joltages_dict = {k: v for k, v in sorted(joltages_dict.items(), key=lambda item: -item[1])}
-        buttons =  sorted(
-            buttons,
-            key=lambda sublist: tuple(value not in sublist for value in list(joltages_dict.keys()))
-        )
-        
-        
-        print(buttons, joltages_dict, joltages_dict.keys())
-        counters ={}
-        print("Testing !", buttons, joltages,joltages_dict)
-        a = max(joltages)-1
-        while joltages_dict != counters and a <= max(joltages)*len(joltages):
-            a+= 1
-            print('-- more comb!', a)
-            for comb in itertools.combinations_with_replacement(buttons, a):
-                #print(comb)
-                # optimization: get the elements that are needed often first.
-                counters = collections.Counter(itertools.chain.from_iterable(comb))
-                if counters == joltages_dict:
-                    print('.    solution!', a, comb, counters)
-                    break # to break the while loop
+        button_presses += bfs(joltages, buttons)
+    print(f"Solution 2: {button_presses}")
 
-        if counters != joltages_dict:          
-            print('. no solution??')
-                #print('  result', current_joltages)
             
-
-        button_presses += a
-    print(f"Solution 1: {button_presses}")
-        
+              
 
 solution1()
 solution2()
