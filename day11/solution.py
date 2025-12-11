@@ -15,34 +15,32 @@ def parse_input(file_path):
         return parse
     
 
-def dfs(current_node, end_node, paths, visited_set, include1 = None, include2 = None):
-    k = (current_node, frozenset(visited_set))
-    if  k in memo: return memo[k]
-    if current_node in visited_set: 
-        memo[k] = 0
-        return 0
-    if  current_node == end_node: 
-        if (include1 is  None or include1 in visited_set) and (include2 is None or include2 in visited_set):
-            memo[k] = 1
-            return 1
-        else:
-            memo[k] = 0
-            return 0
-    count = 0 
-    visited_set.add(current_node)
 
-    for p in paths.get(current_node, []):
-        count += dfs(p, end_node, paths, visited_set,include1, include2)
-    visited_set.remove(current_node)
-    
-    memo[k] = count
+
+def dfs(current_node, end_node, paths, visited_set, include1 = None, include2 = None):
+
+    #if we already had this combination, no need to re-calculate!
+    if (current_node, end_node) in memo: 
+        return memo[(current_node, end_node)]
+
+    if  current_node == end_node: 
+        visited_set.add(current_node)
+        memo[(current_node, end_node)] = 1
+        return 1
+    count = 0
+    if current_node not in visited_set:
+        visited_set.add(current_node)
+
+        for neighbor in paths.get(current_node, []):
+            count += dfs(neighbor, end_node, paths, visited_set)
+        
+    memo[(current_node, end_node)] = count
     return count
 
 
 @time_function
 def solution1(current_node = 'you', end_node = 'out'):
     paths = parse_input('input.txt')
-
     print(f"Solution 1: {dfs(current_node, end_node, paths, set())}")
         
 
@@ -52,92 +50,34 @@ def solution1(current_node = 'you', end_node = 'out'):
 def solution2():
     
     paths = parse_input('input.txt')
-       
-    memo = {}
-    print('testing..')
-    test = dfs('svr', 'out', paths,set(), include1='dac', include2='fft')
-    print('test solution 2:', test)
-    return
-    # get SVR -> DAC -> FFT -> OUT
+    # put the problem into sub-problems.
 
-    print('dac -> fft without svr')
-    p = paths.copy()
-    p.pop('svr')
-    s = set()
-    fac_fft = dfs('dac', 'fft', p, s)
+    # SVR -> DAC -> FFT -> OUT
+    svr_dac = dfs('svr', 'dac', paths, set())
+    # print('svr_dac:', svr_dac)
+
+    dac_fft = dfs('dac', 'fft', paths, set())
+    # print('dac_fft:', dac_fft)
+
+    fft_out = dfs('fft', 'out', paths, set())
+    # print('fft_out:', fft_out)
 
 
-    if fac_fft > 0:
-        print('fft -> out without dac')
-        p = paths.copy()
-        p.pop('dac')
-        s = set()
-        fft_out = dfs('fft', 'out', p, s)
+    #SVR -> FFT -> DAC -> OUT
+    svr_fft = dfs('svr', 'fft', paths, set())
+    # print('svr_fft:', svr_fft)
 
-        print('svr -> dac without fft')
-        p = paths.copy()
-        p.pop('fft')
-        s = set()
-        svr_dac = dfs('svr', 'dac', p,[],s)
+    fft_dac = dfs('fft', 'dac', paths, set())
+    # print('fft_dac:', fft_dac)
 
-        #combine(possible_paths_svr_dac, possible_paths_dac_fft, possible_paths_fft_out, final_paths)
-
-
-    print('fft -> dac without svr ')
-    p = paths.copy()
-    p.pop('svr')
-    s = set()
-    fft_dac = dfs('fft', 'dac', p, s)
-    print(fft_dac)
-
-    print('dac -> out without fft')
-    p = paths.copy()
-    p.pop('fft')
-    s = set()
-    dac_out = dfs('dac', 'out', p,s)
-    print(dac_out)
-    
-
-    print('svr -> fft without dac')
-    p = paths.copy()
-    p.pop('dac')
-    s= set()
-    svr_fft = dfs('svr', 'fft', p,s)
-    print(svr_fft)
-
-
-    #combine(possible_paths_svr_fft, possible_paths_fft_dac, possible_paths_dac_out, final_paths)
-        
-
-
-
-
-    print(possible_paths_svr_dac)
-    print(possible_paths_dac_fft)
-    print(possible_paths_fft_out)
-    print('---')
-    print(possible_paths_svr_fft)
-    print(possible_paths_fft_dac)
-    print(possible_paths_dac_out)
-
-
-    # find the intersections for the paths without double
-
-
-    print('--')
-    for a in final_paths: print(a)
+    dac_out = dfs('dac', 'out', paths, set())
+    # print('dac_out:', dac_out)
+    print(f"Solution 2: {svr_dac*dac_fft*fft_out + svr_fft*fft_dac*dac_out}")
 
     
-
-
-
-
 memo = {}
 solution1()
-print(memo)
+
+#new global memo
 memo = {}
 solution2()
-
-
-#dac -> out without fft
-# 12215
