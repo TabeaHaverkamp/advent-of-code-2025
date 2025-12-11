@@ -17,7 +17,7 @@ def parse_input(file_path):
 
 
 
-def dfs(current_node, end_node, paths, visited_set, include1 = None, include2 = None):
+def dfs(current_node, end_node, paths, visited_set, memo):
 
     #if we already had this combination, no need to re-calculate!
     if (current_node, end_node) in memo: 
@@ -32,7 +32,7 @@ def dfs(current_node, end_node, paths, visited_set, include1 = None, include2 = 
         visited_set.add(current_node)
 
         for neighbor in paths.get(current_node, []):
-            count += dfs(neighbor, end_node, paths, visited_set)
+            count += dfs(neighbor, end_node, paths, visited_set,memo=memo)
         
     memo[(current_node, end_node)] = count
     return count
@@ -40,8 +40,9 @@ def dfs(current_node, end_node, paths, visited_set, include1 = None, include2 = 
 
 @time_function
 def solution1(current_node = 'you', end_node = 'out'):
+    memo ={}
     paths = parse_input('input.txt')
-    print(f"Solution 1: {dfs(current_node, end_node, paths, set())}")
+    print(f"Solution 1: {dfs(current_node, end_node, paths, set(), memo=memo)}")
         
 
 
@@ -53,31 +54,49 @@ def solution2():
     # put the problem into sub-problems.
 
     # SVR -> DAC -> FFT -> OUT
-    svr_dac = dfs('svr', 'dac', paths, set())
+    # during SVR -> DAC, FFT is not allowed etc
+    p = paths.copy()
+    p.pop('fft')
+    memo = {}
+    svr_dac = dfs('svr', 'dac', p, set(), memo = memo)
     # print('svr_dac:', svr_dac)
 
-    dac_fft = dfs('dac', 'fft', paths, set())
+    p = paths.copy()
+    p.pop('svr')
+    memo = {}
+    dac_fft = dfs('dac', 'fft', p, set(), memo = memo)
     # print('dac_fft:', dac_fft)
 
-    fft_out = dfs('fft', 'out', paths, set())
+    p = paths.copy()
+    p.pop('dac')
+    memo = {}
+    fft_out = dfs('fft', 'out', p, set(), memo = memo)
     # print('fft_out:', fft_out)
 
 
     #SVR -> FFT -> DAC -> OUT
-    svr_fft = dfs('svr', 'fft', paths, set())
+    p = paths.copy()
+    p.pop('dac')
+    memo = {}
+    svr_fft = dfs('svr', 'fft', p, set(), memo = memo)
     # print('svr_fft:', svr_fft)
 
-    fft_dac = dfs('fft', 'dac', paths, set())
+    p = paths.copy()
+    p.pop('svr')
+    memo = {}
+    fft_dac = dfs('fft', 'dac', p, set(), memo = memo)
     # print('fft_dac:', fft_dac)
 
-    dac_out = dfs('dac', 'out', paths, set())
+    p = paths.copy()
+    p.pop('fft')
+    memo = {}
+    dac_out = dfs('dac', 'out', p, set(), memo = memo)
     # print('dac_out:', dac_out)
+
     print(f"Solution 2: {svr_dac*dac_fft*fft_out + svr_fft*fft_dac*dac_out}")
 
     
-memo = {}
+
 solution1()
 
-#new global memo
-memo = {}
 solution2()
