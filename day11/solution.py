@@ -15,79 +15,45 @@ def parse_input(file_path):
         return parse
     
 
+def dfs(current_node, end_node, paths, visited_set, include1 = None, include2 = None):
+    k = (current_node, frozenset(visited_set))
+    if  k in memo: return memo[k]
+    if current_node in visited_set: 
+        memo[k] = 0
+        return 0
+    if  current_node == end_node: 
+        if (include1 is  None or include1 in visited_set) and (include2 is None or include2 in visited_set):
+            memo[k] = 1
+            return 1
+        else:
+            memo[k] = 0
+            return 0
+    count = 0 
+    visited_set.add(current_node)
+
+    for p in paths.get(current_node, []):
+        count += dfs(p, end_node, paths, visited_set,include1, include2)
+    visited_set.remove(current_node)
+    
+    memo[k] = count
+    return count
+
+
 @time_function
 def solution1(current_node = 'you', end_node = 'out'):
     paths = parse_input('input.txt')
 
-    def dfs(current_node, end_node, paths,current_path, possible_paths):
-        current_path.append(current_node)
-        if current_node == end_node:
-            possible_paths.append(current_path.copy())
-        for p in paths.get(current_node, []):
-            if p not in current_path:
-                dfs(p, end_node, paths, current_path,possible_paths)
-        current_path.pop()
-
-    possible_paths = []
-
-    dfs(current_node, end_node, paths, [], possible_paths)
-    print(f"Solution 1: {len(possible_paths)}")
+    print(f"Solution 1: {dfs(current_node, end_node, paths, set())}")
         
 
 
 
 @time_function
 def solution2():
+    
     paths = parse_input('input.txt')
-
-    def dfs(current_node, end_node, paths, visited_set, include1 = None, include2 = None):
-        if current_node in visited_set: return 0
-        if  current_node == end_node: 
-            if (include1 is  None or include1 in visited_set) and (include2 is None or include2 in visited_set):
-                return 1
-            else:
-                return 0
-
-        count = 0 
-        visited_set.add(current_node)
-
-        for p in paths.get(current_node, []):
-            count += dfs(p, end_node, paths, visited_set,include1, include2)
-        visited_set.remove(current_node)
-
-        return count
-
-    def combine (p1, p2, p3, final_paths):
-
-        # Combine the segments (Concatenation)
-        for path1 in p1:
-            for path2 in p2:
-                # Check for illegal cycle (nodes in path2 cannot be in path1, except R1)
-                # path1 set includes all nodes EXCEPT the last one (R1)
-                path1_set_no_end = set(path1[:-1]) 
-                overlap = path1_set_no_end.intersection(set(path2[1:]))
-                if overlap: continue
-
-                # We need the full set of nodes from the start of the chain (path1 + path2 without duplicates)
-                # full_base_set = set(path1[:-1]) | set(path2[1:-1])
-                full_base_set = path1_set_no_end.union(set(path2[1:-1]))
-                for path3 in p3:
-                    
-                    # Check against nodes in path3 (excluding R2)
-                    overlap_full = full_base_set.intersection(set(path3[1:]))
-                    if overlap_full: continue
-                    
-                    final_paths.append(path1 + path2[1:] + path3[1:])
-        
-
-    possible_paths_fft_dac = 0
-    possible_paths_dac_fft = 0
-    possible_paths_fft_out = 0
-    possible_paths_svr_dac = 0
-    possible_paths_dac_out = 0
-    possible_paths_svr_fft = 0
-    final_paths = []
-
+       
+    memo = {}
     print('testing..')
     test = dfs('svr', 'out', paths,set(), include1='dac', include2='fft')
     print('test solution 2:', test)
@@ -166,8 +132,10 @@ def solution2():
 
 
 
-
+memo = {}
 solution1()
+print(memo)
+memo = {}
 solution2()
 
 
